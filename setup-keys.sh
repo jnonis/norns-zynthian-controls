@@ -9,3 +9,6 @@ cd ..
 # Copy symlink rule for keys device.
 sudo cp 29-keys.rules /etc/udev/rules.d/
 
+# Add service.
+sudo cp norns-keys.service /etc/systemd/system/
+sudo systemctl enable norns-keys.service

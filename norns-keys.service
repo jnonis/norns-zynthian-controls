@@ -1,0 +1,18 @@
+[Unit]
+Description=GPIO Keys
+#After=
+#Before=norns-matron.service
+Before=norns.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+ExecStart=/usr/bin/gpio_keyd
+ExecStop=/usr/bin/killall -SIGTERM gpio_keyd
+Restart=always
+RestartSec=1
+
+[Install]
+#WantedBy=norns.target
+WantedBy=multi-user.target
