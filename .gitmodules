@@ -1,0 +1,3 @@
+[submodule "gpio_keyd"]
+	path = gpio_keyd
+	url = https://github.com/jnonis/gpio_keyd.git
