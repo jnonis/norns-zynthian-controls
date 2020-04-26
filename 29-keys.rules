@@ -1,0 +1,2 @@
+# Create a symlink to keys input device
+SUBSYSTEM=="input", KERNEL=="event[0-9]*", ATTRS{name}=="keys", SYMLINK+="input/by-path/platform-keys-event"

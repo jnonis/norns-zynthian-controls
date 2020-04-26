@@ -1,0 +1,133 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+    compatible = "brcm,bcm2835", "brcm,bcm2708", "brcm,bcm2709";
+
+    fragment@0 {
+        target-path = "/soc/gpio";
+        __overlay__ {
+            knob_pins1: knob_pins1 {
+                brcm,pins = <23 22>;
+                brcm,function = <0>;
+                brcm,pull = <2>;
+            };
+        };
+    };
+
+    fragment@1 {
+        target-path = "/soc";
+        __overlay__ {
+            knob1: knob1 {
+                compatible = "rotary-encoder";
+                #address-cells = <1>;
+                #size-cells = <0>;
+                pinctrl-names = "default";
+                pinctrl-0 = <&knob_pins1>;
+                gpios = <&gpio 23 1>, <&gpio 22 1>;
+                linux,axis = <0>; /* REL_X */
+                rotary-encoder,relative-axis;
+            };
+        };
+    };
+
+    fragment@2 {
+        target-path = "/soc/gpio";
+        __overlay__ {
+            knob_pins2: knob_pins2 {
+                brcm,pins = <6 4>;
+                brcm,function = <0>;
+                brcm,pull = <2>;
+            };
+        };
+    };
+
+    fragment@3 {
+        target-path = "/soc";
+        __overlay__ {
+            knob2: knob2 {
+                compatible = "rotary-encoder";
+                #address-cells = <1>;
+                #size-cells = <0>;
+                pinctrl-names = "default";
+                pinctrl-0 = <&knob_pins2>;
+                gpios = <&gpio 6 1>, <&gpio 4 1>;
+                linux,axis = <0>; /* REL_X */
+                rotary-encoder,relative-axis;
+            };
+        };
+    };
+
+    fragment@4 {
+        target-path = "/soc/gpio";
+        __overlay__ {
+            knob_pins3: knob_pins3 {
+                brcm,pins = <26 16>;
+                brcm,function = <0>;
+                brcm,pull = <2>;
+            };
+        };
+    };
+
+    fragment@5 {
+        target-path = "/soc";
+        __overlay__ {
+            knob3: knob3 {
+                compatible = "rotary-encoder";
+                #address-cells = <1>;
+                #size-cells = <0>;
+                pinctrl-names = "default";
+                pinctrl-0 = <&knob_pins3>;
+                gpios = <&gpio 26 1>, <&gpio 16 1>;
+                linux,axis = <0>; /* REL_X */
+                rotary-encoder,relative-axis;
+            };
+        };
+    };
+    
+    fragment@6 {
+        target-path = "/soc/gpio";
+        __overlay__ {
+            knob_pins4: knob_pins4 {
+                brcm,pins = <12 5>;
+                brcm,function = <0>;
+                brcm,pull = <2>;
+            };
+        };
+    };
+
+    fragment@7 {
+        target-path = "/soc";
+        __overlay__ {
+            knob4: knob4 {
+                compatible = "rotary-encoder";
+                #address-cells = <1>;
+                #size-cells = <0>;
+                pinctrl-names = "default";
+                pinctrl-0 = <&knob_pins4>;
+                gpios = <&gpio 12 1>, <&gpio 5 1>;
+                linux,axis = <0>; /* REL_X */
+                rotary-encoder,relative-axis;
+            };
+        };
+    };
+    
+    __overrides__ {
+        e1_pin_a = <&knob_pins1>,"brcm,pins:0",
+                   <&knob1>,"gpios:4";
+        e1_pin_b = <&knob_pins1>,"brcm,pins:4",
+                   <&knob1>,"gpios:16";
+        e2_pin_a = <&knob_pins2>,"brcm,pins:0",
+                   <&knob2>,"gpios:4";
+        e2_pin_b = <&knob_pins2>,"brcm,pins:4",
+                   <&knob2>,"gpios:16";
+        e3_pin_a = <&knob_pins3>,"brcm,pins:0",
+                   <&knob3>,"gpios:4";
+        e3_pin_b = <&knob_pins3>,"brcm,pins:4",
+                   <&knob3>,"gpios:16";
+        e4_pin_a = <&knob_pins4>,"brcm,pins:0",
+                   <&knob4>,"gpios:4";
+        e4_pin_b = <&knob_pins4>,"brcm,pins:4",
+                   <&knob4>,"gpios:16";
+    };
+};
