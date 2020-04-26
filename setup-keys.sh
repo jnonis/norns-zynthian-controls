@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Install WiringPi
+sudo apt-get install -y wiringpi
+
 # Build gpio_keyd.
 cd gpio_keyd
 make
