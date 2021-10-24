@@ -1,0 +1,140 @@
+diff --git a/matron/src/hardware/screen.c b/matron/src/hardware/screen.c
+index 106198be..99f1dde4 100644
+--- a/matron/src/hardware/screen.c
++++ b/matron/src/hardware/screen.c
+@@ -9,6 +9,7 @@
+ #include <cairo.h>
+ #include <fcntl.h>
+ #include <linux/fb.h>
++#include <pthread.h>
+ #include <stdint.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -73,10 +74,12 @@ static cairo_operator_t ops[NUM_OPS] = {
+ };
+ 
+ static cairo_surface_t *surface;
++static cairo_surface_t *surfacerender;
+ static cairo_surface_t *surfacefb;
+ static cairo_surface_t *image;
+ 
+ static cairo_t *cr;
++static cairo_t *crrender;
+ static cairo_t *crfb;
+ static cairo_font_face_t *ct[NUM_FONTS];
+ static FT_Library value;
+@@ -92,6 +95,13 @@ typedef struct _cairo_linuxfb_device {
+     struct fb_fix_screeninfo fb_finfo;
+ } cairo_linuxfb_device_t;
+ 
++static const int FPS = 15;
++static const int SLEEP_MILLIS = 1000 / FPS;
++static pthread_t render_thread;
++static pthread_mutex_t render_cond_mutex = PTHREAD_MUTEX_INITIALIZER;
++static pthread_cond_t  render_cond  = PTHREAD_COND_INITIALIZER;
++static struct timespec last_screen_update;
++
+ /* Destroy a cairo surface */
+ void cairo_linuxfb_surface_destroy(void *device) {
+     cairo_linuxfb_device_t *dev = (cairo_linuxfb_device_t *)device;
+@@ -184,6 +194,28 @@ void screen_display_png(const char *filename, double x, double y) {
+     cairo_surface_destroy(image);
+ }
+ 
++void *screen_render(void *args) {
++    (void)args;
++    while(1) {
++        pthread_mutex_lock(&render_cond_mutex);
++        pthread_cond_wait(&render_cond, &render_cond_mutex);
++        pthread_mutex_unlock(&render_cond_mutex);
++        // limit FPS
++        struct timespec now;
++        timespec_get(&now, TIME_UTC);
++        // calculate elapsed time in millis
++        unsigned long elapsed = (now.tv_sec - last_screen_update.tv_sec) * 1000l
++                + (now.tv_nsec - last_screen_update.tv_nsec) / 1000000l;
++        if (elapsed < SLEEP_MILLIS) {
++            usleep((SLEEP_MILLIS - elapsed) * 1000);
++            timespec_get(&now, TIME_UTC);
++        }
++        last_screen_update = now;
++        CHECK_CRR
++        cairo_paint(crfb);
++    }
++}
++
+ void screen_init(void) {
+     surfacefb = cairo_linuxfb_surface_create();
+     if (surfacefb == NULL) {
+@@ -194,6 +226,9 @@ void screen_init(void) {
+     surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 128, 64);
+     cr = cairo_create(surface);
+ 
++    surfacerender = cairo_image_surface_create(CAIRO_FORMAT_RGB16_565,128,64);
++    crrender = cairo_create(surfacerender);
++
+     status = FT_Init_FreeType(&value);
+     if (status != 0) {
+         fprintf(stderr, "ERROR (screen) freetype init\n");
+@@ -311,22 +346,58 @@ void screen_init(void) {
+     cairo_set_font_face(cr, ct[0]);
+     cairo_set_font_size(cr, 8.0);
+ 
+-    // config buffer
++    // config render buffer.
++    cairo_set_operator(crrender, CAIRO_OPERATOR_SOURCE);
++    cairo_set_source_surface(crrender, surface, 0, 0);
++
++    // calculate scale to match framebuffer
++    int width = cairo_image_surface_get_width(surfacefb);
++    int height = cairo_image_surface_get_height(surfacefb);
++    int scale_width = width / 128;
++    int scale_height = height / 64;
++    int scale;
++    if (scale_width < scale_height) {
++        scale = scale_width;
++    } else {
++        scale = scale_height;
++    }
++    int fbx = ((width - (scale * 128)) / 2) / scale;
++    int fby = ((height - (scale * 64)) / 2) / scale;
++    fprintf(stderr, "Framebuffer: %dx%d - Scale: %d - Pos X: %d Y: %d\n", width, height, scale, fbx, fby);
++
++    // config framebuffer
++    cairo_scale(crfb, scale, scale);
+     cairo_set_operator(crfb, CAIRO_OPERATOR_SOURCE);
+-    cairo_set_source_surface(crfb, surface, 0, 0);
++    cairo_set_source_surface(crfb, surfacerender, fbx, fby);
++    cairo_pattern_set_filter(cairo_get_source(crfb), CAIRO_FILTER_FAST);
++
++    // create render thread
++    int iret = pthread_create(&render_thread, NULL, screen_render, NULL);
++    if (iret != 0) {
++        fprintf(stderr, "ERROR (screen) cannot create render thread. Error: %d\n", iret);
++        return;
++    }
++    // init last screen update time
++    timespec_get(&last_screen_update, TIME_UTC);
+ }
+ 
+ void screen_deinit(void) {
+     CHECK_CR
++    pthread_cancel(render_thread);
+     cairo_destroy(cr);
+     cairo_surface_destroy(surface);
++    cairo_destroy(crrender);
++    cairo_surface_destroy(surfacerender);
+     cairo_destroy(crfb);
+     cairo_surface_destroy(surfacefb);
+ }
+ 
+ void screen_update(void) {
+     CHECK_CR
+-    cairo_paint(crfb);
++    cairo_paint(crrender);
++    pthread_mutex_lock(&render_cond_mutex);
++    pthread_cond_signal(&render_cond);
++    pthread_mutex_unlock(&render_cond_mutex);
+ }
+ 
+ void screen_save(void) {

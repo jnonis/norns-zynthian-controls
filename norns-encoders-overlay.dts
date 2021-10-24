@@ -62,7 +62,7 @@
         target-path = "/soc/gpio";
         __overlay__ {
             knob_pins3: knob_pins3 {
-                brcm,pins = <26 16>;
+                brcm,pins = <12 5>;
                 brcm,function = <0>;
                 brcm,pull = <2>;
             };
@@ -78,7 +78,7 @@
                 #size-cells = <0>;
                 pinctrl-names = "default";
                 pinctrl-0 = <&knob_pins3>;
-                gpios = <&gpio 26 1>, <&gpio 16 1>;
+                gpios = <&gpio 12 1>, <&gpio 5 1>;
                 linux,axis = <0>; /* REL_X */
                 rotary-encoder,relative-axis;
             };
@@ -89,7 +89,7 @@
         target-path = "/soc/gpio";
         __overlay__ {
             knob_pins4: knob_pins4 {
-                brcm,pins = <12 5>;
+                brcm,pins = <26 16>;
                 brcm,function = <0>;
                 brcm,pull = <2>;
             };
@@ -105,7 +105,7 @@
                 #size-cells = <0>;
                 pinctrl-names = "default";
                 pinctrl-0 = <&knob_pins4>;
-                gpios = <&gpio 12 1>, <&gpio 5 1>;
+                gpios = <&gpio 26 1>, <&gpio 16 1>;
                 linux,axis = <0>; /* REL_X */
                 rotary-encoder,relative-axis;
             };
